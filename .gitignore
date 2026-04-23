@@ -147,3 +147,5 @@ packages/all-in-one-playground/static/*
 
 # jetbrains
 .idea/
+
+.codex

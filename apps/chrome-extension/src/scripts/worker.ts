@@ -29,7 +29,6 @@ self.addEventListener('unhandledrejection', (event) => {
 
 // Background Bridge for MCP connection
 const BRIDGE_PERMISSION_KEY = 'midscene_bridge_permission';
-const BRIDGE_STOPPED_KEY = 'midscene_bridge_stopped';
 let backgroundBridge: BridgeConnector | null = null;
 let currentBridgeStatus: BridgeStatus = 'closed';
 
@@ -331,8 +330,6 @@ async function startBackgroundBridge(serverEndpoint?: string): Promise<void> {
   if (backgroundBridge) {
     await backgroundBridge.disconnect();
   }
-  // Clear the user-stopped flag so service worker restarts will auto-connect
-  chrome.storage.local.remove(BRIDGE_STOPPED_KEY).catch(() => {});
   backgroundBridge = createBackgroundBridge(serverEndpoint);
   await backgroundBridge.connect();
   console.log('[BackgroundBridge] Started');
@@ -344,8 +341,6 @@ async function stopBackgroundBridge(): Promise<void> {
     backgroundBridge = null;
     currentBridgeStatus = 'closed';
     console.log('[BackgroundBridge] Stopped');
-    // Persist the user's intent to stop so service worker restarts don't auto-connect
-    chrome.storage.local.set({ [BRIDGE_STOPPED_KEY]: true }).catch(() => {});
     // Update keepalive
     safeSetupKeepalive({
       storageKey: BRIDGE_PERMISSION_KEY,
@@ -363,19 +358,11 @@ async function initBackgroundBridge(): Promise<void> {
   }
 
   try {
-    // Respect the user's intent: if they explicitly stopped bridge, don't auto-start
-    const result = await chrome.storage.local.get(BRIDGE_STOPPED_KEY);
-    if (result[BRIDGE_STOPPED_KEY]) {
-      console.log(
-        '[BackgroundBridge] Bridge was stopped by user, skipping auto-start',
-      );
-      currentBridgeStatus = 'closed';
-      broadcastBridgeStatus('closed');
-      return;
-    }
-
-    console.log('[BackgroundBridge] Auto-starting background bridge...');
-    await startBackgroundBridge();
+    console.log(
+      '[BackgroundBridge] Auto-start disabled by default; waiting for explicit user start',
+    );
+    currentBridgeStatus = 'closed';
+    broadcastBridgeStatus('closed');
   } catch (error) {
     console.error('[BackgroundBridge] Failed to init:', error);
   }
@@ -388,9 +375,9 @@ setTimeout(() => initBackgroundBridge(), 0);
 // Register alarm listener for keepalive pings
 registerAlarmListener();
 
-// Setup keepalive on startup - will be updated after initBackgroundBridge checks stopped state
+// Setup keepalive on startup in disabled state; bridge callbacks will toggle it.
 safeSetupKeepalive({
-  shouldEnable: true,
+  shouldEnable: false,
   storageKey: BRIDGE_PERMISSION_KEY,
   currentBridgeStatus,
 });

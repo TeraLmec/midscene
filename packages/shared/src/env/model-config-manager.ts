@@ -127,12 +127,6 @@ export class ModelConfigManager {
     return this.modelConfigMap[intent];
   }
 
-  getUploadTestServerUrl(): string | undefined {
-    const { openaiExtraConfig } = this.getModelConfig('default');
-    const serverUrl = openaiExtraConfig?.REPORT_SERVER_URL as string;
-    return serverUrl;
-  }
-
   registerGlobalConfigManager(globalConfigManager: GlobalConfigManager) {
     this.globalConfigManager = globalConfigManager;
   }

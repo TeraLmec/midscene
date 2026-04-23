@@ -351,7 +351,6 @@ describe('aiAction cacheable option propagation', () => {
         modelFamily: true,
       }),
       throwErrorIfNonVLModel: vi.fn(),
-      getUploadTestServerUrl: vi.fn().mockReturnValue(undefined),
     });
 
     // Spy on runYaml to ensure it's NOT called with undefined
@@ -410,7 +409,6 @@ describe('aiAction cacheable option propagation', () => {
         modelFamily: true,
       }),
       throwErrorIfNonVLModel: vi.fn(),
-      getUploadTestServerUrl: vi.fn().mockReturnValue(undefined),
     });
 
     // Spy on runYaml to ensure it's NOT called with empty string
@@ -469,7 +467,6 @@ describe('aiAction cacheable option propagation', () => {
         modelFamily: true,
       }),
       throwErrorIfNonVLModel: vi.fn(),
-      getUploadTestServerUrl: vi.fn().mockReturnValue(undefined),
     });
 
     // Spy on runYaml to ensure it's NOT called with whitespace
@@ -530,7 +527,6 @@ describe('aiAction cacheable option propagation', () => {
         modelFamily: true,
       }),
       throwErrorIfNonVLModel: vi.fn(),
-      getUploadTestServerUrl: vi.fn().mockReturnValue(undefined),
     });
 
     // Mock runYaml to avoid actual execution

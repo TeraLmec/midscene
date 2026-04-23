@@ -397,7 +397,6 @@ export class Agent<
     for (let attempt = 0; ; attempt++) {
       try {
         return await commonContextParser(this.interface, {
-          uploadServerUrl: this.modelConfigManager.getUploadTestServerUrl(),
           screenshotShrinkFactor: this.opts.screenshotShrinkFactor,
           modelFamily,
         });

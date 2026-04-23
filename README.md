@@ -22,8 +22,6 @@ English | [简体中文](./README.zh.md)
   <a href="https://huggingface.co/ByteDance-Seed/UI-TARS-1.5-7B"><img src="https://img.shields.io/badge/UI%20TARS%20Models-yellow" alt="hugging face model" /></a>
   <a href="https://npm-compare.com/@midscene/web/#timeRange=THREE_YEARS"><img src="https://img.shields.io/npm/dm/@midscene/web.svg?style=flat-square&color=00a8f0" alt="downloads" /></a>
   <a href="https://github.com/web-infra-dev/midscene/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square&color=00a8f0" alt="License" />
-  <a href="https://discord.gg/2JyBHxszE4"><img src="https://img.shields.io/discord/1328277792730779648?style=flat-square&color=7289DA&label=Discord&logo=discord&logoColor=white" alt="discord" /></a>
-  <a href="https://x.com/midscene_ai"><img src="https://img.shields.io/twitter/follow/midscene_ai?style=flat-square" alt="twitter" /></a>
   <a href="https://deepwiki.com/web-infra-dev/midscene">
     <img alt="Ask DeepWiki.com" src="https://devin.ai/assets/deepwiki-badge.png" style="height: 18px; vertical-align: middle;" />
   </a>
@@ -37,7 +35,7 @@ Use [Midscene Skills](https://github.com/web-infra-dev/midscene-skills) to contr
 
 * [Web Automation - Automatically register the GitHub form in a web browser and pass all field validations](https://midscenejs.com/showcases#web)
 * [iOS Automation - Meituan coffee order](https://midscenejs.com/showcases#ios)
-* [iOS Automation - Auto-like the first @midscene_ai tweet](https://midscenejs.com/showcases#ios)
+* [iOS Automation - Interact with a social feed](https://midscenejs.com/showcases#ios)
 * [Android Automation - DCar: Xiaomi SU7 specs](https://midscenejs.com/showcases#android)
 * [Android Automation - Booking a hotel for Christmas](https://midscenejs.com/showcases#android)
 * [MCP Integration - Midscene MCP UI prepatch release](https://midscenejs.com/showcases#mcp)
@@ -95,20 +93,8 @@ Read more about [Model Strategy](https://midscenejs.com/model-strategy)
 
 ## 🤝 Community
 
-* [Discord](https://discord.gg/2JyBHxszE4)
-* [Follow us on X](https://x.com/midscene_ai)
-* [Lark Group(飞书交流群)](https://applink.larkoffice.com/client/chat/chatter/add_by_link?link_token=693v0991-a6bb-4b44-b2e1-365ca0d199ba)
-
-## 🌟 Awesome Midscene
-
-Community projects that extend Midscene.js capabilities:
-
-* [midscene-ios](https://github.com/lhuanyu/midscene-ios) - iOS Mirror automation support for Midscene
-* [midscene-pc](https://github.com/Mofangbao/midscene-pc) - PC operation device for Windows, macOS, and Linux
-* [midscene-pc-docker](https://github.com/Mofangbao/midscene-pc-docker) - Docker image with Midscene-PC server pre-installed
-* [Midscene-Python](https://github.com/Python51888/Midscene-Python) - Python SDK for Midscene automation
-* [midscene-java](https://github.com/Master-Frank/midscene-java) by @Master-Frank - Java SDK for Midscene automation
-* [midscene-java](https://github.com/alstafeev/midscene-java) by @alstafeev - Java SDK for Midscene automation
+* Issues: [https://github.com/web-infra-dev/midscene/issues](https://github.com/web-infra-dev/midscene/issues)
+* Discussions: [https://github.com/web-infra-dev/midscene/discussions](https://github.com/web-infra-dev/midscene/discussions)
 
 
 ## 📝 Credits
@@ -132,7 +118,7 @@ If you use Midscene.js in your research or project, please cite:
 
 ```bibtex
 @software{Midscene.js,
-  author = {Xiao Zhou, Tao Yu, YiBing Lin},
+  author = {Midscene Contributors},
   title = {Midscene.js: Your AI Operator for Web, Android, iOS, Automation & Testing.},
   year = {2025},
   publisher = {GitHub},

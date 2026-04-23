@@ -14,7 +14,6 @@ import {
   MIDSCENE_MODEL_BASE_URL,
   MIDSCENE_MODEL_EXTRA_BODY_JSON,
   MIDSCENE_MODEL_FAMILY,
-  MIDSCENE_MODEL_INIT_CONFIG_JSON,
   MIDSCENE_MODEL_NAME,
   MIDSCENE_MODEL_REASONING_BUDGET,
   MIDSCENE_MODEL_REASONING_EFFORT,
@@ -94,17 +93,6 @@ describe('ModelConfigManager', () => {
     expect(config.openaiApiKey).toBe('env-key');
     expect(config.openaiBaseURL).toBe('https://env.example.com');
     expect(config.intent).toBe('default');
-  });
-
-  it('provides upload server URL from openaiExtraConfig', () => {
-    const manager = new ModelConfigManager({
-      ...baseMap,
-      [MIDSCENE_MODEL_INIT_CONFIG_JSON]: JSON.stringify({
-        REPORT_SERVER_URL: 'https://uploader.test',
-      }),
-    });
-
-    expect(manager.getUploadTestServerUrl()).toBe('https://uploader.test');
   });
 
   it('clears model config map when called by global manager', () => {

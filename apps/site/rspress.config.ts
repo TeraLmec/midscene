@@ -21,22 +21,6 @@ export default defineConfig({
         mode: 'link',
         content: 'https://github.com/web-infra-dev/midscene',
       },
-      {
-        icon: 'discord',
-        mode: 'link',
-        content: 'https://discord.gg/2JyBHxszE4',
-      },
-      {
-        icon: 'x',
-        mode: 'link',
-        content: 'https://x.com/midscene_ai',
-      },
-      {
-        icon: 'lark',
-        mode: 'link',
-        content:
-          'https://applink.larkoffice.com/client/chat/chatter/add_by_link?link_token=693v0991-a6bb-4b44-b2e1-365ca0d199ba',
-      },
     ],
     editLink: {
       docRepoBaseUrl:

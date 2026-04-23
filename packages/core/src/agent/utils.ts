@@ -8,7 +8,6 @@ import type {
   Rect,
   UIContext,
 } from '@/types';
-import { uploadTestInfoToServer } from '@/utils';
 import type { TModelFamily } from '@midscene/shared/env';
 import {
   MIDSCENE_REPORT_QUIET,
@@ -27,7 +26,6 @@ import { debug as cacheDebug } from './task-cache';
 export async function commonContextParser(
   interfaceInstance: AbstractInterface,
   _opt: {
-    uploadServerUrl?: string;
     screenshotShrinkFactor?: number;
     modelFamily?: TModelFamily;
   },
@@ -39,13 +37,6 @@ export async function commonContextParser(
   debug('Getting interface description');
   const description = interfaceInstance.describe?.() || '';
   debug('Interface description end');
-
-  debug('Uploading test info to server');
-  uploadTestInfoToServer({
-    testUrl: description,
-    serverUrl: _opt.uploadServerUrl,
-  });
-  debug('UploadTestInfoToServer end');
 
   debug('will get size');
   const interfaceSize = await interfaceInstance.size();

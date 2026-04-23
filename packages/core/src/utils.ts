@@ -1,18 +1,12 @@
-import { execFile } from 'node:child_process';
 import * as fs from 'node:fs';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
-import { promisify } from 'node:util';
 import {
   defaultRunDirName,
   getMidsceneRunSubDir,
 } from '@midscene/shared/common';
-import {
-  MIDSCENE_CACHE,
-  MIDSCENE_DEBUG_MODE,
-  globalConfigManager,
-} from '@midscene/shared/env';
+import { MIDSCENE_CACHE, globalConfigManager } from '@midscene/shared/env';
 import { getRunningPkgInfo } from '@midscene/shared/node';
 import { assert, logMsg } from '@midscene/shared/utils';
 import {
@@ -377,79 +371,4 @@ declare const __VERSION__: string;
 
 export function getVersion() {
   return __VERSION__;
-}
-
-function debugLog(...message: any[]) {
-  // always read from process.env, and cannot be override by modelConfig, overrideAIConfig, etc.
-  // also avoid circular dependency
-  const debugMode = process.env[MIDSCENE_DEBUG_MODE];
-  if (debugMode) {
-    console.log('[Midscene]', ...message);
-  }
-}
-
-let gitInfoPromise: Promise<{ repoUrl: string; userEmail: string }> | null =
-  null;
-
-function getGitInfoAsync(): Promise<{ repoUrl: string; userEmail: string }> {
-  if (gitInfoPromise) return gitInfoPromise;
-
-  const execFileAsync = promisify(execFile);
-
-  gitInfoPromise = Promise.all([
-    execFileAsync('git', ['config', '--get', 'remote.origin.url']).then(
-      ({ stdout }) => stdout.trim(),
-      () => '',
-    ),
-    execFileAsync('git', ['config', '--get', 'user.email']).then(
-      ({ stdout }) => stdout.trim(),
-      () => '',
-    ),
-  ]).then(([repoUrl, userEmail]) => ({ repoUrl, userEmail }));
-
-  return gitInfoPromise;
-}
-
-let lastReportedRepoUrl = '';
-export async function uploadTestInfoToServer({
-  testUrl,
-  serverUrl,
-}: { testUrl: string; serverUrl?: string }) {
-  if (!serverUrl) return;
-
-  const { repoUrl, userEmail } = await getGitInfoAsync();
-
-  // Only upload test info if:
-  // 1. Server URL is configured AND
-  // 2. Either:
-  //    - We have a repo URL that's different from last reported one (to avoid duplicate reports)
-  //    - OR we don't have a repo URL but have a test URL (for non-git environments)
-  if (repoUrl ? repoUrl !== lastReportedRepoUrl : !!testUrl) {
-    debugLog('Uploading test info to server', {
-      serverUrl,
-      repoUrl,
-      testUrl,
-      userEmail,
-    });
-
-    fetch(serverUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        repo_url: repoUrl,
-        test_url: testUrl,
-        user_email: userEmail,
-      }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        debugLog('Successfully uploaded test info to server:', data);
-      })
-      .catch((error) =>
-        debugLog('Failed to upload test info to server:', error),
-      );
-    lastReportedRepoUrl = repoUrl;
-  }
 }

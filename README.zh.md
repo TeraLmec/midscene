@@ -22,8 +22,6 @@
   <a href="https://huggingface.co/ByteDance-Seed/UI-TARS-1.5-7B"><img src="https://img.shields.io/badge/UI%20TARS%20Models-yellow" alt="hugging face model" /></a>
   <a href="https://npm-compare.com/@midscene/web/#timeRange=THREE_YEARS"><img src="https://img.shields.io/npm/dm/@midscene/web.svg?style=flat-square&color=00a8f0" alt="downloads" /></a>
   <a href="https://github.com/web-infra-dev/midscene/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square&color=00a8f0" alt="License" />
-  <a href="https://discord.gg/2JyBHxszE4"><img src="https://img.shields.io/discord/1328277792730779648?style=flat-square&color=7289DA&label=Discord&logo=discord&logoColor=white" alt="discord" /></a>
-  <a href="https://x.com/midscene_ai"><img src="https://img.shields.io/twitter/follow/midscene_ai?style=flat-square" alt="twitter" /></a>
   <a href="https://deepwiki.com/web-infra-dev/midscene">
     <img alt="Ask DeepWiki.com" src="https://devin.ai/assets/deepwiki-badge.png" style="height: 18px; vertical-align: middle;" />
   </a>
@@ -37,7 +35,7 @@
 
 * [Web 自动化 - 在浏览器中自动注册 GitHub 表单并通过所有字段校验](https://midscenejs.com/zh/showcases#web)
 * [iOS 自动化 - 美团下单咖啡](https://midscenejs.com/zh/showcases#ios)
-* [iOS 自动化 - 自动点赞 @midscene_ai 的第一条推文](https://midscenejs.com/zh/showcases#ios)
+* [iOS 自动化 - 社交信息流交互](https://midscenejs.com/zh/showcases#ios)
 * [Android 自动化 - 懂车帝：查看小米 SU7 参数](https://midscenejs.com/zh/showcases#android)
 * [Android 自动化 - 预订圣诞节酒店](https://midscenejs.com/zh/showcases#android)
 * [MCP 集成 - Midscene MCP UI prepatch 版本发布](https://midscenejs.com/zh/showcases#mcp)
@@ -95,20 +93,8 @@ Midscene.js 在 UI 操作上完全采用纯视觉路线：元素定位与交互�
 
 ## 🤝 社区
 
-* [Discord](https://discord.gg/2JyBHxszE4)
-* [关注 X](https://x.com/midscene_ai)
-* [飞书交流群](https://applink.larkoffice.com/client/chat/chatter/add_by_link?link_token=693v0991-a6bb-4b44-b2e1-365ca0d199ba)
-
-## 🌟 Awesome Midscene
-
-扩展 Midscene.js 能力的社区项目：
-
-* [midscene-ios](https://github.com/lhuanyu/midscene-ios) - 面向 Midscene 的 iOS Mirror 自动化支持
-* [midscene-pc](https://github.com/Mofangbao/midscene-pc) - 适配 Windows、macOS、Linux 的 PC 操作设备
-* [midscene-pc-docker](https://github.com/Mofangbao/midscene-pc-docker) - 预装 Midscene-PC 服务端的 Docker 镜像
-* [Midscene-Python](https://github.com/Python51888/Midscene-Python) - Midscene 自动化 Python SDK
-* [midscene-java](https://github.com/Master-Frank/midscene-java) by @Master-Frank - Midscene 自动化 Java SDK
-* [midscene-java](https://github.com/alstafeev/midscene-java) by @alstafeev - Midscene 自动化 Java SDK
+* Issues: [https://github.com/web-infra-dev/midscene/issues](https://github.com/web-infra-dev/midscene/issues)
+* Discussions: [https://github.com/web-infra-dev/midscene/discussions](https://github.com/web-infra-dev/midscene/discussions)
 
 
 ## 📝 致谢
@@ -132,7 +118,7 @@ Midscene.js 在 UI 操作上完全采用纯视觉路线：元素定位与交互�
 
 ```bibtex
 @software{Midscene.js,
-  author = {Xiao Zhou, Tao Yu, YiBing Lin},
+  author = {Midscene Contributors},
   title = {Midscene.js: Your AI Operator for Web, Android, iOS, Automation & Testing.},
   year = {2025},
   publisher = {GitHub},
