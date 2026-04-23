@@ -1,14 +1,32 @@
+import { fileURLToPath } from 'node:url';
 import { playgroundForAgent } from '@midscene/playground';
 import { PuppeteerAgent } from '@midscene/web/puppeteer';
 import dotenv from 'dotenv';
 import puppeteer from 'puppeteer';
 
 dotenv.config({
-  path: '../../.env',
+  path: fileURLToPath(new URL('../../../.env', import.meta.url)),
 });
+
+function getServerPort() {
+  const rawPort =
+    process.env.WEB_PLAYGROUND_SERVER_PORT ||
+    process.env.PLAYGROUND_SERVER_PORT;
+  if (!rawPort) {
+    return 5870;
+  }
+
+  const port = Number(rawPort);
+  if (!Number.isInteger(port) || port <= 0 || port > 65535) {
+    throw new Error(`Invalid web playground server port: ${rawPort}`);
+  }
+
+  return port;
+}
 
 async function main() {
   console.log('🚀 Starting Playground Demo Server...');
+  const port = getServerPort();
 
   // Launch Puppeteer browser directly
   const browser = await puppeteer.launch({
@@ -36,7 +54,7 @@ async function main() {
 
   // Launch playground server with CORS enabled for playground app
   const server = await playgroundForAgent(agent).launch({
-    port: 5870, // Use different port from web-integration demo
+    port,
     openBrowser: false, // Don't open browser automatically
     verbose: true,
     enableCors: true,

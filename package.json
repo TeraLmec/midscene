@@ -4,6 +4,7 @@
   "version": "1.7.5",
   "scripts": {
     "dev": "node scripts/dev-prepare.js && nx run-many --target=build:watch --exclude=android-playground,chrome-extension,@midscene/report,doc --verbose --parallel=6",
+    "playground:web": "node scripts/launch-web-playground.mjs",
     "build": "nx run-many --target=build --exclude=doc --verbose",
     "build:skip-cache": "npm run clean && nx run-many --target=build --exclude=doc --verbose --skip-nx-cache",
     "test": "nx run-many --target=test --projects=@midscene/core,@midscene/shared,@midscene/visualizer,@midscene/web,@midscene/cli,@midscene/android,@midscene/ios,@midscene/computer,@midscene/android-mcp,@midscene/ios-mcp,@midscene/web-bridge-mcp,@midscene/playground  --verbose",

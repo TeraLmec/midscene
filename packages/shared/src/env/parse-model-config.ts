@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import {
   DEFAULT_MODEL_CONFIG_KEYS,
   type DEFAULT_MODEL_CONFIG_KEYS_LEGACY,
@@ -39,6 +41,62 @@ const KEYS_MAP: Record<TIntent, TModelConfigKeys> = {
   planning: PLANNING_MODEL_CONFIG_KEYS,
   default: DEFAULT_MODEL_CONFIG_KEYS,
 } as const;
+
+let rootRetryDefaultsCache:
+  | {
+      retryCount: number;
+      retryInterval: number;
+    }
+  | undefined;
+
+function getRootRetryDefaults() {
+  if (rootRetryDefaultsCache) {
+    return rootRetryDefaultsCache;
+  }
+
+  const fallback = {
+    retryCount: 1,
+    retryInterval: 2000,
+  };
+
+  let currentDir = process.cwd();
+  let configPath = join(currentDir, 'midscene.config.json');
+  while (!existsSync(configPath)) {
+    const parentDir = dirname(currentDir);
+    if (parentDir === currentDir) {
+      configPath = '';
+      break;
+    }
+    currentDir = parentDir;
+    configPath = join(currentDir, 'midscene.config.json');
+  }
+
+  if (!existsSync(configPath)) {
+    rootRetryDefaultsCache = fallback;
+    return rootRetryDefaultsCache;
+  }
+
+  try {
+    const raw = JSON.parse(readFileSync(configPath, 'utf-8')) || {};
+    const maxAttempts = Number(raw.maxRetryAttempts);
+    const retryDelayMs = Number(raw.retryDelayMs);
+
+    rootRetryDefaultsCache = {
+      retryCount:
+        Number.isFinite(maxAttempts) && maxAttempts > 0
+          ? Math.max(0, Math.floor(maxAttempts) - 1)
+          : fallback.retryCount,
+      retryInterval:
+        Number.isFinite(retryDelayMs) && retryDelayMs >= 0
+          ? Math.floor(retryDelayMs)
+          : fallback.retryInterval,
+    };
+  } catch {
+    rootRetryDefaultsCache = fallback;
+  }
+
+  return rootRetryDefaultsCache;
+}
 
 /**
  * Get UI-TARS model version from model family
@@ -215,6 +273,7 @@ export const parseOpenaiSdkConfig = ({
   const uiTarsModelVersion = getUITarsModelVersion(modelFamily);
 
   const modelDescription = getModelDescription(modelFamily, uiTarsModelVersion);
+  const rootRetryDefaults = getRootRetryDefaults();
 
   return {
     socksProxy,
@@ -233,17 +292,17 @@ export const parseOpenaiSdkConfig = ({
       : undefined,
     temperature,
     retryCount: (() => {
-      if (!provider[keys.retryCount]) return 1;
+      if (!provider[keys.retryCount]) return rootRetryDefaults.retryCount;
       const val = Number(provider[keys.retryCount]);
-      if (!Number.isFinite(val)) return 1;
+      if (!Number.isFinite(val)) return rootRetryDefaults.retryCount;
       if (val < 0)
         throw new Error(`${keys.retryCount} must be non-negative, got ${val}`);
       return val;
     })(),
     retryInterval: (() => {
-      if (!provider[keys.retryInterval]) return 2000;
+      if (!provider[keys.retryInterval]) return rootRetryDefaults.retryInterval;
       const val = Number(provider[keys.retryInterval]);
-      if (!Number.isFinite(val)) return 2000;
+      if (!Number.isFinite(val)) return rootRetryDefaults.retryInterval;
       if (val < 0)
         throw new Error(
           `${keys.retryInterval} must be non-negative, got ${val}`,
