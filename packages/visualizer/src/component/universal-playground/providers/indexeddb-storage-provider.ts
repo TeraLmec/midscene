@@ -3,13 +3,18 @@ import {
   createCleanupFunction,
   withErrorHandling,
 } from '@midscene/shared/baseDB';
-import type { InfoListItem, StorageProvider } from '../../../types';
+import type {
+  InfoListItem,
+  PlaygroundRunRecord,
+  StorageProvider,
+} from '../../../types';
 
 // Database configuration
 const DB_NAME = 'midscene_playground';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const MESSAGES_STORE = 'playground_messages';
 const RESULTS_STORE = 'playground_results';
+const RUN_RECORDS_STORE = 'playground_run_records';
 
 // Maximum stored items to prevent storage bloat
 const MAX_STORED_MESSAGES = 100;
@@ -34,6 +39,7 @@ export class IndexedDBStorageProvider implements StorageProvider {
       [
         { name: MESSAGES_STORE, keyPath: 'id' },
         { name: RESULTS_STORE, keyPath: 'id' },
+        { name: RUN_RECORDS_STORE, keyPath: 'id' },
       ],
     );
 
@@ -150,6 +156,7 @@ export class IndexedDBStorageProvider implements StorageProvider {
       await Promise.all([
         this.dbManager.clear(MESSAGES_STORE),
         this.dbManager.clear(RESULTS_STORE),
+        this.dbManager.clear(RUN_RECORDS_STORE),
       ]);
     }, 'Failed to clear messages from IndexedDB');
   }
@@ -176,6 +183,44 @@ export class IndexedDBStorageProvider implements StorageProvider {
       undefined,
       this.resultsCleanup,
     );
+  }
+
+  async saveRunRecords(records: PlaygroundRunRecord[]): Promise<void> {
+    await withErrorHandling(async () => {
+      await this.dbManager.clear(RUN_RECORDS_STORE);
+      await Promise.all(
+        records.map((record) =>
+          this.dbManager.put(RUN_RECORDS_STORE, {
+            id: record.id,
+            data: record,
+            timestamp: new Date(record.createdAt).getTime(),
+          }),
+        ),
+      );
+    }, 'Failed to save run records to IndexedDB');
+  }
+
+  async loadRunRecords(): Promise<PlaygroundRunRecord[]> {
+    const result = await withErrorHandling(
+      async () => {
+        const records = await this.dbManager.getAll<{
+          id: string;
+          data: PlaygroundRunRecord;
+          timestamp: number;
+        }>(RUN_RECORDS_STORE, true);
+        return records.map((record) => record.data);
+      },
+      'Failed to load run records from IndexedDB',
+      [],
+    );
+
+    return result || [];
+  }
+
+  async clearRunRecords(): Promise<void> {
+    await withErrorHandling(async () => {
+      await this.dbManager.clear(RUN_RECORDS_STORE);
+    }, 'Failed to clear run records from IndexedDB');
   }
 
   /**
@@ -288,6 +333,7 @@ export class IndexedDBStorageProvider implements StorageProvider {
 export class MemoryStorageProvider implements StorageProvider {
   private messages: InfoListItem[] = [];
   private results: Map<string, InfoListItem> = new Map();
+  private runRecords: PlaygroundRunRecord[] = [];
 
   async saveMessages(messages: InfoListItem[]): Promise<void> {
     this.messages = [...messages];
@@ -300,10 +346,23 @@ export class MemoryStorageProvider implements StorageProvider {
   async clearMessages(): Promise<void> {
     this.messages = [];
     this.results.clear();
+    this.runRecords = [];
   }
 
   async saveResult(id: string, result: InfoListItem): Promise<void> {
     this.results.set(id, result);
+  }
+
+  async saveRunRecords(records: PlaygroundRunRecord[]): Promise<void> {
+    this.runRecords = [...records];
+  }
+
+  async loadRunRecords(): Promise<PlaygroundRunRecord[]> {
+    return [...this.runRecords];
+  }
+
+  async clearRunRecords(): Promise<void> {
+    this.runRecords = [];
   }
 }
 
@@ -324,6 +383,18 @@ export class NoOpStorageProvider implements StorageProvider {
   }
 
   async saveResult(_id: string, _result: InfoListItem): Promise<void> {
+    // No-op
+  }
+
+  async saveRunRecords(_records: PlaygroundRunRecord[]): Promise<void> {
+    // No-op
+  }
+
+  async loadRunRecords(): Promise<PlaygroundRunRecord[]> {
+    return [];
+  }
+
+  async clearRunRecords(): Promise<void> {
     // No-op
   }
 }

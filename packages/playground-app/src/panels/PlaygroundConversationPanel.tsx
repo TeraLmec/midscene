@@ -154,6 +154,9 @@ export function PlaygroundConversationPanel({
             onCreateSession={async () => {
               await actions.createSession();
             }}
+            onRefreshSetup={async () => {
+              await actions.refreshSessionSetup();
+            }}
           />
         )}
       </div>

@@ -40,6 +40,11 @@ export type {
   PlaygroundAdapter,
   ServerResponse,
   AgentFactory,
+  PreviewClickInput,
+  PreviewKeyInput,
+  PreviewNavigationInput,
+  PreviewScrollInput,
+  PreviewTypeInput,
 } from './types';
 export type {
   LaunchPlaygroundOptions,

@@ -52,6 +52,10 @@
   width: 100%;
 }
 
+.session-setup-refresh {
+  margin-top: 12px;
+}
+
 .session-setup-form {
   width: 100%;
   margin-top: 24px;
@@ -107,6 +111,8 @@
   }
 
   .ant-input,
+  .ant-input-password,
+  .ant-input-affix-wrapper,
   .ant-input-number {
     height: 36px;
     background: var(--midscene-surface-muted, #f2f4f7);
@@ -120,6 +126,11 @@
 
   .ant-input-number-input {
     height: 36px;
+  }
+
+  textarea.ant-input {
+    height: auto;
+    min-height: 88px;
   }
 }
 

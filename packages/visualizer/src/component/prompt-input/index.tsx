@@ -97,6 +97,7 @@ export const PromptInput: React.FC<PromptInputProps> = ({
 }) => {
   const [hoveringSettings, setHoveringSettings] = useState(false);
   const [promptValue, setPromptValue] = useState('');
+  const [actionSearch, setActionSearch] = useState('');
   const placeholder = getPlaceholderForType(selectedType);
   const isMinimalChrome = chrome?.variant === 'minimal';
   const resolvedPlaceholder = chrome?.placeholder || placeholder;
@@ -273,9 +274,13 @@ export const PromptInput: React.FC<PromptInputProps> = ({
   const hiddenDropdownAPIs = useMemo(
     () =>
       availableDropdownMethods.filter(
-        (api) => !defaultMainButtons.includes(api),
+        (api) =>
+          !defaultMainButtons.includes(api) &&
+          actionNameForType(api)
+            .toLowerCase()
+            .includes(actionSearch.trim().toLowerCase()),
       ),
-    [availableDropdownMethods],
+    [actionSearch, availableDropdownMethods],
   );
 
   const handleTypeSelect = useCallback(
@@ -360,6 +365,24 @@ export const PromptInput: React.FC<PromptInputProps> = ({
   const moreApisDropdownMenu = useMemo<MenuProps>(
     () => ({ items: hiddenApiGroupItems }),
     [hiddenApiGroupItems],
+  );
+
+  const renderActionDropdown = useCallback(
+    (menu: React.ReactNode) => (
+      <div className="more-apis-dropdown-content">
+        <Input
+          aria-label="Search action APIs"
+          size="small"
+          allowClear
+          value={actionSearch}
+          onChange={(event) => setActionSearch(event.target.value)}
+          placeholder="Search APIs"
+          className="more-apis-search"
+        />
+        {menu}
+      </div>
+    ),
+    [actionSearch],
   );
 
   // Minimal chrome's snap-back-to-aiAct behaviour is owned by
@@ -1093,6 +1116,7 @@ export const PromptInput: React.FC<PromptInputProps> = ({
                 trigger={['click']}
                 disabled={!runButtonEnabled}
                 overlayClassName="more-apis-dropdown"
+                dropdownRender={renderActionDropdown}
               >
                 <button
                   aria-label={`Select action type (current: ${actionButtonLabel})`}
@@ -1217,6 +1241,7 @@ export const PromptInput: React.FC<PromptInputProps> = ({
             trigger={['click']}
             disabled={!runButtonEnabled}
             overlayClassName="more-apis-dropdown"
+            dropdownRender={renderActionDropdown}
           >
             <Button
               className={`more-apis-button ${!defaultMainButtons.includes(selectedType) ? 'selected-from-dropdown' : ''}`}

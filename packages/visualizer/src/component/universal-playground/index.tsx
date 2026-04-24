@@ -9,13 +9,21 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePlaygroundExecution } from '../../hooks/usePlaygroundExecution';
 import { usePlaygroundState } from '../../hooks/usePlaygroundState';
 import { useEnvConfig } from '../../store/store';
-import type { FormValue, UniversalPlaygroundProps } from '../../types';
+import type {
+  FormValue,
+  PlaygroundRunRecord,
+  UniversalPlaygroundProps,
+} from '../../types';
 import { ContextPreview } from '../context-preview';
 import { EnvConfigReminder } from '../env-config-reminder';
 import { PlaygroundResultView } from '../playground-result';
 import './index.less';
 import PlaygroundIcon from '../../icons/avatar.svg';
 import { defaultMainButtons } from '../../utils/constants';
+import {
+  downloadTextFile,
+  exportRunRecordsToYaml,
+} from '../../utils/playground-run-records';
 import { resolveProgressActionIcon } from '../../utils/progress-action-icon';
 import { PromptInput } from '../prompt-input';
 import ShinyText from '../shiny-text';
@@ -66,6 +74,8 @@ export function UniversalPlayground({
   const [form] = Form.useForm();
   const { config } = useEnvConfig();
   const [sdkReady, setSdkReady] = useState(false);
+  const [, setRunRecords] = useState<PlaygroundRunRecord[]>([]);
+  const [savedSequence, setSavedSequence] = useState<PlaygroundRunRecord[]>([]);
 
   // Initialize form with default type on mount
   useEffect(() => {
@@ -121,6 +131,32 @@ export function UniversalPlayground({
     return createStorageProvider(bestStorageType, namespace);
   }, [storage, sdkReady, componentConfig.storageNamespace, playgroundSDK]);
 
+  useEffect(() => {
+    if (!effectiveStorage?.loadRunRecords) return;
+    effectiveStorage
+      .loadRunRecords()
+      .then((records) => {
+        setRunRecords(records);
+        setSavedSequence(records);
+      })
+      .catch((error) => {
+        console.error('Failed to load saved playground run records:', error);
+      });
+  }, [effectiveStorage]);
+
+  const persistRunRecords = useCallback(
+    async (records: PlaygroundRunRecord[]) => {
+      setRunRecords(records);
+      setSavedSequence(records);
+      try {
+        await effectiveStorage?.saveRunRecords?.(records);
+      } catch (error) {
+        console.error('Failed to persist playground run records:', error);
+      }
+    },
+    [effectiveStorage],
+  );
+
   const {
     loading,
     setLoading,
@@ -164,6 +200,15 @@ export function UniversalPlayground({
     currentRunningIdRef,
     interruptedFlagRef,
     deviceType: componentConfig.deviceType,
+    onRunRecord: (record) => {
+      setRunRecords((prev) => {
+        const next = [...prev, record];
+        effectiveStorage?.saveRunRecords?.(next).catch((error) => {
+          console.error('Failed to persist playground run record:', error);
+        });
+        return next;
+      });
+    },
   });
 
   // Override SDK config when environment config changes
@@ -188,6 +233,94 @@ export function UniversalPlayground({
       message.error(error?.message || 'Execution failed');
     }
   }, [form, executeAction]);
+
+  const getExportUrl = useCallback(async () => {
+    try {
+      const runtimeInfo = await playgroundSDK?.getRuntimeInfo?.();
+      const url = runtimeInfo?.metadata?.currentWebUrl;
+      return typeof url === 'string' && url ? url : undefined;
+    } catch {
+      return undefined;
+    }
+  }, [playgroundSDK]);
+
+  const exportRecords = useCallback(
+    async (
+      records: PlaygroundRunRecord[],
+      filename = 'playground-sequence.yaml',
+    ) => {
+      const exported = exportRunRecordsToYaml({
+        records,
+        webUrl: await getExportUrl(),
+      });
+      if (exported.warnings.length > 0) {
+        message.warning(exported.warnings[0]);
+      }
+      downloadTextFile(exported.yaml, filename, 'application/x-yaml');
+    },
+    [getExportUrl],
+  );
+
+  const rerunRecord = useCallback(
+    async (record: PlaygroundRunRecord) => {
+      await executeAction({
+        type: record.actionType,
+        prompt: record.prompt,
+        params: record.params,
+      });
+    },
+    [executeAction],
+  );
+
+  const editRecord = useCallback(
+    (record: PlaygroundRunRecord) => {
+      form.setFieldsValue({
+        type: record.actionType,
+        prompt: record.prompt,
+        params: record.params,
+      });
+      message.info('Action loaded into the prompt input');
+    },
+    [form],
+  );
+
+  const saveRecordToSequence = useCallback(
+    async (record: PlaygroundRunRecord) => {
+      const next = savedSequence.some((item) => item.id === record.id)
+        ? savedSequence
+        : [...savedSequence, record];
+      await persistRunRecords(next);
+      message.success('Action saved to sequence');
+    },
+    [persistRunRecords, savedSequence],
+  );
+
+  const downloadDump = useCallback((record: PlaygroundRunRecord) => {
+    if (!record.result?.dump) {
+      message.warning('No dump is available for this run');
+      return;
+    }
+    downloadTextFile(
+      JSON.stringify(record.result.dump, null, 2),
+      `${record.id}.json`,
+      'application/json',
+    );
+  }, []);
+
+  const rerunSequence = useCallback(
+    async (records: PlaygroundRunRecord[]) => {
+      for (const record of records) {
+        await rerunRecord(record);
+      }
+    },
+    [rerunRecord],
+  );
+
+  const clearSequence = useCallback(async () => {
+    await persistRunRecords([]);
+    await effectiveStorage?.clearRunRecords?.();
+    message.success('Saved sequence cleared');
+  }, [effectiveStorage, persistRunRecords]);
 
   // Check if run button should be enabled
   const configAlreadySet = Object.keys(config || {}).length >= 1;
@@ -298,6 +431,20 @@ export function UniversalPlayground({
 
         {/* Main Dialog Area */}
         <div className="middle-dialog-area">
+          {savedSequence.length > 0 && (
+            <div className="sequence-action-bar">
+              <span>{savedSequence.length} saved</span>
+              <Button size="small" onClick={() => rerunSequence(savedSequence)}>
+                Rerun all
+              </Button>
+              <Button size="small" onClick={() => exportRecords(savedSequence)}>
+                Export sequence as YAML
+              </Button>
+              <Button size="small" onClick={clearSequence}>
+                Clear sequence
+              </Button>
+            </div>
+          )}
           {/* Clear Button */}
           {componentConfig.showClearButton !== false && infoList.length > 1 && (
             <div className="clear-button-container">
@@ -441,6 +588,17 @@ export function UniversalPlayground({
                               verticalMode={item.verticalMode || false}
                               fitMode="width"
                               actionType={item.actionType}
+                              runRecord={item.runRecord}
+                              onRerun={rerunRecord}
+                              onEditRerun={editRecord}
+                              onSaveSequence={saveRecordToSequence}
+                              onExportYaml={(record) =>
+                                exportRecords(
+                                  [record],
+                                  `${record.actionType}-${record.id}.yaml`,
+                                )
+                              }
+                              onDownloadDump={downloadDump}
                             />
                           ) : (
                             <>

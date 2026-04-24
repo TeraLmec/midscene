@@ -238,6 +238,11 @@ import type {
   ExecutionOptions,
   PlaygroundAgent,
   PlaygroundRuntimeInfo,
+  PreviewClickInput,
+  PreviewKeyInput,
+  PreviewNavigationInput,
+  PreviewScrollInput,
+  PreviewTypeInput,
 } from '@midscene/playground';
 
 // result type
@@ -246,6 +251,30 @@ export interface PlaygroundResult {
   dump?: ExecutionDump | IExecutionDump | null;
   reportHTML?: string | null;
   error: string | null;
+}
+
+export interface PlaygroundRunRecord {
+  id: string;
+  actionType: string;
+  prompt?: string;
+  params?: Record<string, unknown>;
+  executionOptions: ExecutionOptions;
+  status: 'passed' | 'failed' | 'stopped';
+  result?: PlaygroundResult | null;
+  createdAt: string;
+}
+
+export interface PlaygroundRunSequence {
+  id: string;
+  name: string;
+  records: PlaygroundRunRecord[];
+  updatedAt: string;
+}
+
+export interface PlaygroundYamlExportResult {
+  yaml: string;
+  warnings: string[];
+  exportableCount: number;
 }
 
 // Playground component props type
@@ -339,6 +368,11 @@ export interface PlaygroundSDKLike {
   getServiceMode?(): 'In-Browser-Extension' | 'Server';
   getRuntimeInfo?(): Promise<PlaygroundRuntimeInfo | null>;
   setBeforeActionHook?(hook?: BeforeActionHook): void;
+  sendPreviewClick?(payload: PreviewClickInput): Promise<void>;
+  sendPreviewType?(payload: PreviewTypeInput): Promise<void>;
+  sendPreviewKey?(payload: PreviewKeyInput): Promise<void>;
+  sendPreviewScroll?(payload: PreviewScrollInput): Promise<void>;
+  sendPreviewNavigation?(payload: PreviewNavigationInput): Promise<void>;
   id?: string; // unique ID for SDK instances
 }
 
@@ -353,6 +387,9 @@ export interface StorageProvider {
   loadMessages?(): Promise<InfoListItem[]>;
   clearMessages?(): Promise<void>;
   saveResult?(id: string, result: InfoListItem): Promise<void>;
+  saveRunRecords?(records: PlaygroundRunRecord[]): Promise<void>;
+  loadRunRecords?(): Promise<PlaygroundRunRecord[]>;
+  clearRunRecords?(): Promise<void>;
 }
 
 // context provider interface
@@ -374,6 +411,7 @@ export interface InfoListItem {
   loadingProgressText?: string;
   verticalMode?: boolean;
   actionType?: string; // Track which action type was executed
+  runRecord?: PlaygroundRunRecord;
   /**
    * Identifier for the ExecutionTask that produced this progress item —
    * `task.subType || task.type`, e.g. `'Planning'`, `'Locate'`, `'Tap'`,

@@ -5,7 +5,7 @@ import {
   type PlaygroundBranding,
   type UniversalPlaygroundConfig,
 } from '@midscene/visualizer';
-import { Layout } from 'antd';
+import { Button, Layout } from 'antd';
 import { useEffect, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { PlaygroundPreview } from './PlaygroundPreview';
@@ -72,6 +72,21 @@ export function PlaygroundApp({
               </div>
               <h1>{offlineTitle}</h1>
               <p className="connection-status">{offlineStatusText}</p>
+              <div className="offline-diagnostics">
+                <div>
+                  Server URL: <code>{serverUrl || window.location.origin}</code>
+                </div>
+                <div>
+                  Launch command: <code>pnpm run playground:web</code>
+                </div>
+                <div>
+                  Check the root <code>.env</code> for model API configuration
+                  and verify the server port is not already in use.
+                </div>
+                <Button onClick={controller.actions.refreshServerState}>
+                  Retry connection
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -102,6 +117,28 @@ export function PlaygroundApp({
                       showModelName={false}
                       playgroundSDK={controller.state.playgroundSDK}
                     />
+                  </div>
+                  <div className="runtime-strip">
+                    <span>
+                      Server:{' '}
+                      {controller.state.serverOnline ? 'online' : 'offline'}
+                    </span>
+                    <span>
+                      Target:{' '}
+                      {controller.state.sessionViewState.displayName ||
+                        controller.state.runtimeInfo?.title ||
+                        controller.state.deviceType}
+                    </span>
+                    <span>
+                      Preview:{' '}
+                      {controller.state.runtimeInfo?.preview?.kind ||
+                        'unavailable'}
+                    </span>
+                    <span>
+                      Interface:{' '}
+                      {controller.state.runtimeInfo?.interface?.type ||
+                        'unknown'}
+                    </span>
                   </div>
                 </div>
 

@@ -1,6 +1,15 @@
-import { InfoCircleOutlined, ReloadOutlined } from '@ant-design/icons';
-import { Button, Spin, Tooltip } from 'antd';
+import {
+  ArrowLeftOutlined,
+  ArrowRightOutlined,
+  InfoCircleOutlined,
+  PauseOutlined,
+  PlayCircleOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons';
+import { Button, Input, Spin, Switch, Tooltip, message } from 'antd';
+import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { mapPreviewPointToImagePoint } from '../../utils/preview-coordinate';
 import './index.less';
 
 interface ScreenshotViewerProps {
@@ -15,6 +24,21 @@ interface ScreenshotViewerProps {
   serverOnline: boolean;
   isUserOperating?: boolean; // Whether user is currently operating
   mjpegUrl?: string; // When provided, use MJPEG live stream instead of polling
+  interactiveAvailable?: boolean;
+  onPreviewClick?: (payload: {
+    x: number;
+    y: number;
+    clickCount?: number;
+  }) => Promise<void>;
+  onPreviewType?: (payload: { text: string }) => Promise<void>;
+  onPreviewKey?: (payload: { key: string }) => Promise<void>;
+  onPreviewScroll?: (payload: {
+    deltaX?: number;
+    deltaY?: number;
+  }) => Promise<void>;
+  onPreviewNavigation?: (payload: {
+    action: 'reload' | 'back' | 'forward';
+  }) => Promise<void>;
 }
 
 export default function ScreenshotViewer({
@@ -23,6 +47,12 @@ export default function ScreenshotViewer({
   serverOnline,
   isUserOperating = false,
   mjpegUrl,
+  interactiveAvailable = false,
+  onPreviewClick,
+  onPreviewType,
+  onPreviewKey,
+  onPreviewScroll,
+  onPreviewNavigation,
 }: ScreenshotViewerProps) {
   const [screenshot, setScreenshot] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -32,6 +62,10 @@ export default function ScreenshotViewer({
     type: string;
     description?: string;
   } | null>(null);
+  const [interactive, setInteractive] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [fitMode, setFitMode] = useState<'fit' | 'actual'>('fit');
+  const [typedText, setTypedText] = useState('');
   const isMjpeg = Boolean(mjpegUrl && serverOnline);
 
   // Refs for managing polling
@@ -99,10 +133,12 @@ export default function ScreenshotViewer({
     console.log('Starting screenshot polling (5s interval)');
     pollingIntervalRef.current = setInterval(() => {
       if (!isPollingPausedRef.current && serverOnline) {
-        fetchScreenshot(false);
+        if (!paused) {
+          fetchScreenshot(false);
+        }
       }
     }, 5000); // 5 second polling
-  }, [fetchScreenshot, serverOnline]);
+  }, [fetchScreenshot, paused, serverOnline]);
 
   // Stop polling
   const stopPolling = useCallback(() => {
@@ -129,6 +165,123 @@ export default function ScreenshotViewer({
     fetchScreenshot(true);
   }, [fetchScreenshot]);
 
+  const sendPreviewInput = useCallback(
+    async (operation: () => Promise<void>) => {
+      try {
+        await operation();
+        if (!isMjpeg) {
+          await fetchScreenshot(false);
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Preview input failed';
+        message.error(errorMessage);
+      }
+    },
+    [fetchScreenshot, isMjpeg],
+  );
+
+  const handleImageClick = useCallback(
+    (event: React.MouseEvent<HTMLImageElement>) => {
+      if (!interactive || !onPreviewClick) return;
+      if (event.detail !== 1) return;
+      const image = event.currentTarget;
+      const point = mapPreviewPointToImagePoint({
+        clientX: event.clientX,
+        clientY: event.clientY,
+        imageRect: image.getBoundingClientRect(),
+        naturalWidth: image.naturalWidth,
+        naturalHeight: image.naturalHeight,
+      });
+      if (!point) return;
+      sendPreviewInput(() =>
+        onPreviewClick({
+          ...point,
+          clickCount: 1,
+        }),
+      );
+    },
+    [interactive, onPreviewClick, sendPreviewInput],
+  );
+
+  const handleImageDoubleClick = useCallback(
+    (event: React.MouseEvent<HTMLImageElement>) => {
+      if (!interactive || !onPreviewClick) return;
+      const image = event.currentTarget;
+      const point = mapPreviewPointToImagePoint({
+        clientX: event.clientX,
+        clientY: event.clientY,
+        imageRect: image.getBoundingClientRect(),
+        naturalWidth: image.naturalWidth,
+        naturalHeight: image.naturalHeight,
+      });
+      if (!point) return;
+      sendPreviewInput(() =>
+        onPreviewClick({
+          ...point,
+          clickCount: 2,
+        }),
+      );
+    },
+    [interactive, onPreviewClick, sendPreviewInput],
+  );
+
+  const handleWheel = useCallback(
+    (event: React.WheelEvent<HTMLImageElement>) => {
+      if (!interactive || !onPreviewScroll) return;
+      event.preventDefault();
+      sendPreviewInput(() =>
+        onPreviewScroll({
+          deltaX: event.deltaX,
+          deltaY: event.deltaY,
+        }),
+      );
+    },
+    [interactive, onPreviewScroll, sendPreviewInput],
+  );
+
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (!interactive || !onPreviewKey) return;
+      const tagName = (event.target as HTMLElement).tagName;
+      if (tagName === 'INPUT' || tagName === 'TEXTAREA') return;
+      const allowedKeys = new Set([
+        'Enter',
+        'Escape',
+        'Tab',
+        'Backspace',
+        'Delete',
+        'ArrowUp',
+        'ArrowDown',
+        'ArrowLeft',
+        'ArrowRight',
+        'Home',
+        'End',
+        'PageUp',
+        'PageDown',
+      ]);
+      if (!allowedKeys.has(event.key)) return;
+      event.preventDefault();
+      sendPreviewInput(() => onPreviewKey({ key: event.key }));
+    },
+    [interactive, onPreviewKey, sendPreviewInput],
+  );
+
+  const handleTypeSubmit = useCallback(() => {
+    if (!typedText || !onPreviewType) return;
+    const text = typedText;
+    setTypedText('');
+    sendPreviewInput(() => onPreviewType({ text }));
+  }, [onPreviewType, sendPreviewInput, typedText]);
+
+  const handleNavigation = useCallback(
+    (action: 'reload' | 'back' | 'forward') => {
+      if (!onPreviewNavigation) return;
+      sendPreviewInput(() => onPreviewNavigation({ action }));
+    },
+    [onPreviewNavigation, sendPreviewInput],
+  );
+
   // Manage server connection status changes
   useEffect(() => {
     if (!serverOnline) {
@@ -143,7 +296,7 @@ export default function ScreenshotViewer({
     fetchInterfaceInfo();
 
     // In MJPEG mode, skip polling entirely
-    if (isMjpeg) {
+    if (isMjpeg || paused) {
       stopPolling();
       return;
     }
@@ -158,6 +311,7 @@ export default function ScreenshotViewer({
   }, [
     serverOnline,
     isMjpeg,
+    paused,
     startPolling,
     stopPolling,
     fetchScreenshot,
@@ -174,13 +328,16 @@ export default function ScreenshotViewer({
     } else {
       // When user operation ends, update screenshot immediately and resume polling
       resumePolling();
-      fetchScreenshot(false);
+      if (!paused) {
+        fetchScreenshot(false);
+      }
     }
   }, [
     isUserOperating,
     pausePolling,
     resumePolling,
     fetchScreenshot,
+    paused,
     serverOnline,
   ]);
 
@@ -233,7 +390,11 @@ export default function ScreenshotViewer({
   };
 
   return (
-    <div className="screenshot-viewer">
+    <div
+      className="screenshot-viewer"
+      onKeyDown={handleKeyDown}
+      tabIndex={interactive ? 0 : undefined}
+    >
       <div className="screenshot-header">
         <div className="screenshot-title">
           <h3>{interfaceInfo?.type ? interfaceInfo.type : 'Device Name'}</h3>
@@ -247,35 +408,108 @@ export default function ScreenshotViewer({
               <InfoCircleOutlined size={16} className="info-icon" />
             </Tooltip>
           </div>
-          {!isMjpeg && (
-            <div className="screenshot-controls">
-              {lastUpdateTime > 0 && (
-                <span className="last-update-time">
-                  Last updated {formatLastUpdateTime(lastUpdateTime)}
+          <div className="screenshot-controls">
+            {lastUpdateTime > 0 && (
+              <span className="last-update-time">
+                Last updated {formatLastUpdateTime(lastUpdateTime)}
+              </span>
+            )}
+            {interactiveAvailable && (
+              <Tooltip title="Forward browser input from this preview">
+                <span className="interactive-toggle">
+                  Interactive
+                  <Switch
+                    size="small"
+                    checked={interactive}
+                    onChange={setInteractive}
+                    aria-label="Toggle interactive preview input"
+                  />
                 </span>
-              )}
-              <Tooltip title="Refresh screenshot">
-                <Button
-                  icon={<ReloadOutlined />}
-                  onClick={handleManualRefresh}
-                  loading={loading}
-                  size="small"
-                />
               </Tooltip>
-              {isUserOperating && (
-                <span className="operation-indicator">
-                  <Spin size="small" /> Operating...
-                </span>
-              )}
-            </div>
-          )}
+            )}
+            <Tooltip title={paused ? 'Resume preview' : 'Pause preview'}>
+              <Button
+                aria-label={paused ? 'Resume preview' : 'Pause preview'}
+                icon={paused ? <PlayCircleOutlined /> : <PauseOutlined />}
+                onClick={() => setPaused((value) => !value)}
+                size="small"
+              />
+            </Tooltip>
+            {onPreviewNavigation && (
+              <>
+                <Tooltip title="Go back">
+                  <Button
+                    aria-label="Go back"
+                    icon={<ArrowLeftOutlined />}
+                    onClick={() => handleNavigation('back')}
+                    size="small"
+                  />
+                </Tooltip>
+                <Tooltip title="Go forward">
+                  <Button
+                    aria-label="Go forward"
+                    icon={<ArrowRightOutlined />}
+                    onClick={() => handleNavigation('forward')}
+                    size="small"
+                  />
+                </Tooltip>
+              </>
+            )}
+            <Tooltip title="Refresh screenshot">
+              <Button
+                aria-label="Refresh screenshot"
+                icon={<ReloadOutlined />}
+                onClick={() =>
+                  onPreviewNavigation
+                    ? handleNavigation('reload')
+                    : handleManualRefresh()
+                }
+                loading={loading}
+                size="small"
+              />
+            </Tooltip>
+            <Tooltip title="Toggle screenshot fit mode">
+              <Button
+                aria-label="Toggle screenshot fit mode"
+                size="small"
+                onClick={() =>
+                  setFitMode((mode) => (mode === 'fit' ? 'actual' : 'fit'))
+                }
+              >
+                {fitMode === 'fit' ? '1:1' : 'Fit'}
+              </Button>
+            </Tooltip>
+            {isUserOperating && (
+              <span className="operation-indicator">
+                <Spin size="small" /> Operating...
+              </span>
+            )}
+          </div>
         </div>
+        {interactive && onPreviewType ? (
+          <div className="screenshot-typebar">
+            <Input
+              aria-label="Type into preview"
+              size="small"
+              value={typedText}
+              onChange={(event) => setTypedText(event.target.value)}
+              onPressEnter={handleTypeSubmit}
+              placeholder="Type text and press Enter"
+            />
+            <Button size="small" onClick={handleTypeSubmit}>
+              Send
+            </Button>
+          </div>
+        ) : null}
         <div className="screenshot-content">
           {isMjpeg ? (
             <img
               src={mjpegUrl}
               alt="Device Live Stream"
-              className="screenshot-image"
+              className={`screenshot-image ${fitMode === 'actual' ? 'actual-size' : ''}`}
+              onClick={handleImageClick}
+              onDoubleClick={handleImageDoubleClick}
+              onWheel={handleWheel}
             />
           ) : screenshot ? (
             <img
@@ -285,7 +519,10 @@ export default function ScreenshotViewer({
                   : `data:image/png;base64,${screenshot}`
               }
               alt="Device Screenshot"
-              className="screenshot-image"
+              className={`screenshot-image ${fitMode === 'actual' ? 'actual-size' : ''}`}
+              onClick={handleImageClick}
+              onDoubleClick={handleImageDoubleClick}
+              onWheel={handleWheel}
               onLoad={() => console.log('Screenshot image loaded successfully')}
               onError={(e) => {
                 console.error('Screenshot image load error:', e);

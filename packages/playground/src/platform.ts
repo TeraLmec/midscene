@@ -56,7 +56,14 @@ export interface PlaygroundPlatformSelectorConfig {
 export interface PlaygroundSessionField {
   key: string;
   label: string;
-  type: 'text' | 'number' | 'select';
+  type:
+    | 'text'
+    | 'password'
+    | 'secret'
+    | 'number'
+    | 'select'
+    | 'boolean'
+    | 'textarea';
   required?: boolean;
   defaultValue?: string | number | boolean;
   options?: PlaygroundSessionFieldOption[];

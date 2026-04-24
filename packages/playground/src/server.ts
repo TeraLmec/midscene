@@ -30,7 +30,14 @@ import {
   type PlaygroundRuntimeInfo,
   buildRuntimeInfo,
 } from './runtime-metadata';
-import type { AgentFactory } from './types';
+import type {
+  AgentFactory,
+  PreviewClickInput,
+  PreviewKeyInput,
+  PreviewNavigationInput,
+  PreviewScrollInput,
+  PreviewTypeInput,
+} from './types';
 
 import 'dotenv/config';
 
@@ -42,6 +49,90 @@ function serializeAiConfigSignature(aiConfig: Record<string, unknown>): string {
       leftKey.localeCompare(rightKey),
     ),
   );
+}
+
+const allowedPreviewKeys = new Set([
+  'Enter',
+  'Escape',
+  'Tab',
+  'Backspace',
+  'Delete',
+  'ArrowUp',
+  'ArrowDown',
+  'ArrowLeft',
+  'ArrowRight',
+  'Home',
+  'End',
+  'PageUp',
+  'PageDown',
+]);
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function parseClickInput(input: unknown): PreviewClickInput {
+  const body = input as Partial<PreviewClickInput>;
+  if (!isFiniteNumber(body?.x) || !isFiniteNumber(body?.y)) {
+    throw new Error('x and y are required numeric coordinates');
+  }
+
+  const clickCount = body.clickCount ?? 1;
+  if (!Number.isInteger(clickCount) || clickCount < 1 || clickCount > 2) {
+    throw new Error('clickCount must be 1 or 2');
+  }
+
+  return {
+    x: body.x,
+    y: body.y,
+    clickCount,
+  };
+}
+
+function parseTypeInput(input: unknown): PreviewTypeInput {
+  const text = (input as Partial<PreviewTypeInput>)?.text;
+  if (typeof text !== 'string' || text.length === 0) {
+    throw new Error('text is required');
+  }
+  if (text.length > 2000) {
+    throw new Error('text is too long');
+  }
+  return { text };
+}
+
+function parseKeyInput(input: unknown): PreviewKeyInput {
+  const key = (input as Partial<PreviewKeyInput>)?.key;
+  if (typeof key !== 'string' || key.length === 0) {
+    throw new Error('key is required');
+  }
+  if (!allowedPreviewKeys.has(key)) {
+    throw new Error(`Unsupported key: ${key}`);
+  }
+  return { key };
+}
+
+function parseScrollInput(input: unknown): PreviewScrollInput {
+  const body = input as Partial<PreviewScrollInput>;
+  const deltaX = body?.deltaX ?? 0;
+  const deltaY = body?.deltaY ?? 0;
+  if (!isFiniteNumber(deltaX) || !isFiniteNumber(deltaY)) {
+    throw new Error('deltaX and deltaY must be numeric when provided');
+  }
+  if (deltaX === 0 && deltaY === 0) {
+    throw new Error('At least one scroll delta is required');
+  }
+  return {
+    deltaX,
+    deltaY,
+  };
+}
+
+function parseNavigationInput(input: unknown): PreviewNavigationInput {
+  const action = (input as Partial<PreviewNavigationInput>)?.action;
+  if (action !== 'reload' && action !== 'back' && action !== 'forward') {
+    throw new Error('navigation action must be reload, back, or forward');
+  }
+  return { action };
 }
 
 /**
@@ -142,6 +233,27 @@ interface PlaygroundActiveConnection {
   runtime?: PlaygroundRuntimeState;
   executionHooks?: PlaygroundExecutionHooks;
   sidecars?: PlaygroundSidecar[];
+}
+
+interface PuppeteerPreviewInterface {
+  mouse?: {
+    click?: (
+      x: number,
+      y: number,
+      options?: { button?: 'left'; count?: number },
+    ) => Promise<void>;
+    wheel?: (deltaX: number, deltaY: number) => Promise<void>;
+  };
+  keyboard?: {
+    type?: (text: string) => Promise<void>;
+    press?: (key: { key: string }) => Promise<void>;
+  };
+  reload?: () => Promise<void>;
+  goBack?: () => Promise<void>;
+  underlyingPage?: {
+    goForward?: () => Promise<void>;
+  };
+  interfaceType?: string;
 }
 
 class PlaygroundServer {
@@ -347,6 +459,7 @@ class PlaygroundServer {
   }
 
   getRuntimeInfo(): PlaygroundRuntimeInfo {
+    const currentWebUrl = this.getCurrentWebUrl();
     return buildRuntimeInfo({
       platformId: this._activeConnection.runtime?.platformId,
       title: this._activeConnection.runtime?.title,
@@ -356,13 +469,30 @@ class PlaygroundServer {
       interfaceDescription:
         this._activeConnection.agent?.interface?.describe?.() || undefined,
       preview: this._activeConnection.runtime?.preview,
-      metadata: this.buildSessionMetadata(),
+      metadata: {
+        ...this.buildSessionMetadata(),
+        ...(currentWebUrl ? { currentWebUrl } : {}),
+      },
       supportsScreenshot:
         typeof this._activeConnection.agent?.interface?.screenshotBase64 ===
         'function',
       mjpegStreamUrl: this._activeConnection.agent?.interface?.mjpegStreamUrl,
       scrcpyPort: this.scrcpyPort,
     });
+  }
+
+  private getCurrentWebUrl(): string | undefined {
+    const page = (
+      this._activeConnection.agent?.interface as unknown as {
+        underlyingPage?: { url?: () => string };
+      }
+    )?.underlyingPage;
+    try {
+      const url = page?.url?.();
+      return typeof url === 'string' && url.length > 0 ? url : undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   getSessionInfo(): PlaygroundSessionState & {
@@ -640,6 +770,31 @@ class PlaygroundServer {
         'Agent destroyed but cannot recreate: no factory function provided. Next /execute call will fail.',
       );
     }
+  }
+
+  private getPuppeteerInterfaceOrThrow(): PuppeteerPreviewInterface {
+    const agent = this.getActiveAgentOrThrow();
+    const iface = agent.interface as unknown as PuppeteerPreviewInterface;
+
+    if (iface.interfaceType !== 'puppeteer') {
+      throw new Error('Preview input is only supported for Puppeteer sessions');
+    }
+
+    return iface;
+  }
+
+  private handlePreviewInputError(error: unknown, res: Response): void {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
+    const statusCode =
+      errorMessage === 'No active session'
+        ? 409
+        : errorMessage.includes('only supported for Puppeteer')
+          ? 501
+          : 400;
+    res.status(statusCode).json({
+      error: errorMessage,
+    });
   }
 
   /**
@@ -1149,6 +1304,105 @@ class PlaygroundServer {
         }
       },
     );
+
+    this._app.post('/input/click', async (req: Request, res: Response) => {
+      try {
+        const input = parseClickInput(req.body);
+        const iface = this.getPuppeteerInterfaceOrThrow();
+        if (typeof iface.mouse?.click !== 'function') {
+          return res.status(501).json({
+            error: 'Mouse click is not available on current interface',
+          });
+        }
+        await iface.mouse.click(input.x, input.y, {
+          button: 'left',
+          count: input.clickCount,
+        });
+        res.json({ status: 'ok' });
+      } catch (error) {
+        this.handlePreviewInputError(error, res);
+      }
+    });
+
+    this._app.post('/input/type', async (req: Request, res: Response) => {
+      try {
+        const input = parseTypeInput(req.body);
+        const iface = this.getPuppeteerInterfaceOrThrow();
+        if (typeof iface.keyboard?.type !== 'function') {
+          return res.status(501).json({
+            error: 'Keyboard type is not available on current interface',
+          });
+        }
+        await iface.keyboard.type(input.text);
+        res.json({ status: 'ok' });
+      } catch (error) {
+        this.handlePreviewInputError(error, res);
+      }
+    });
+
+    this._app.post('/input/key', async (req: Request, res: Response) => {
+      try {
+        const input = parseKeyInput(req.body);
+        const iface = this.getPuppeteerInterfaceOrThrow();
+        if (typeof iface.keyboard?.press !== 'function') {
+          return res.status(501).json({
+            error: 'Keyboard press is not available on current interface',
+          });
+        }
+        await iface.keyboard.press({ key: input.key });
+        res.json({ status: 'ok' });
+      } catch (error) {
+        this.handlePreviewInputError(error, res);
+      }
+    });
+
+    this._app.post('/input/scroll', async (req: Request, res: Response) => {
+      try {
+        const input = parseScrollInput(req.body);
+        const iface = this.getPuppeteerInterfaceOrThrow();
+        if (typeof iface.mouse?.wheel !== 'function') {
+          return res.status(501).json({
+            error: 'Mouse wheel is not available on current interface',
+          });
+        }
+        await iface.mouse.wheel(input.deltaX ?? 0, input.deltaY ?? 0);
+        res.json({ status: 'ok' });
+      } catch (error) {
+        this.handlePreviewInputError(error, res);
+      }
+    });
+
+    this._app.post('/input/navigation', async (req: Request, res: Response) => {
+      try {
+        const input = parseNavigationInput(req.body);
+        const iface = this.getPuppeteerInterfaceOrThrow();
+        if (input.action === 'reload') {
+          if (typeof iface.reload !== 'function') {
+            return res.status(501).json({
+              error: 'Reload is not available on current interface',
+            });
+          }
+          await iface.reload();
+        } else if (input.action === 'back') {
+          if (typeof iface.goBack !== 'function') {
+            return res.status(501).json({
+              error: 'Back navigation is not available on current interface',
+            });
+          }
+          await iface.goBack();
+        } else {
+          if (typeof iface.underlyingPage?.goForward !== 'function') {
+            return res.status(501).json({
+              error: 'Forward navigation is not available on current interface',
+            });
+          }
+          await iface.underlyingPage.goForward();
+        }
+        res.json({ status: 'ok' });
+      } catch (error) {
+        this.handlePreviewInputError(error, res);
+      }
+    });
 
     // Screenshot API for real-time screenshot polling
     this._app.get('/screenshot', async (_req: Request, res: Response) => {

@@ -41,6 +41,29 @@ export interface ExecutionOptions {
   deviceOptions?: DeviceOptions;
 }
 
+export interface PreviewClickInput {
+  x: number;
+  y: number;
+  clickCount?: number;
+}
+
+export interface PreviewTypeInput {
+  text: string;
+}
+
+export interface PreviewKeyInput {
+  key: string;
+}
+
+export interface PreviewScrollInput {
+  deltaX?: number;
+  deltaY?: number;
+}
+
+export interface PreviewNavigationInput {
+  action: 'reload' | 'back' | 'forward';
+}
+
 export type BeforeActionHook = (
   actionType: string,
   value: FormValue,

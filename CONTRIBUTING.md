@@ -257,51 +257,10 @@ Commit your changes to your forked repo, and [create a pull request](https://hel
 
 > Normally, the commits in a PR will be squashed into one commit, so you don't need to rebase locally.
 
-### Format of PR titles and Commit Messages
+### Commit Messages
 
-We use [Conventional Commits](https://www.conventionalcommits.org/) for PR titles and commit messages. This helps in automating changelog generation and keeps the commit history clean and understandable.
-
-**Structure:**
-
-```
-<type>(<scope>): <subject>
-^    ^       ^
-|    |       |__ Subject: Concise description of the change (imperative mood, lowercase).
-|    |__________ Scope: The specific part of the codebase affected. **This is mandatory.**
-|_______________ Type: Indicates the kind of change.
-```
-
-**Allowed Types:**
-
-*   `feat`: A new feature.
-*   `fix`: A bug fix.
-*   `refactor`: Code changes that neither fix a bug nor add a feature.
-*   `chore`: Changes to the build process, auxiliary tools, libraries, documentation generation etc.
-*   `docs`: Documentation only changes.
-*   Other conventional types like `perf`, `style`, `test`, `ci`, `build` are also acceptable.
-
-**Mandatory & Allowed Scopes:**
-
-Every commit **must** include a scope. The scope must be one of the following:
-
-*   `workflow`
-*   `llm`
-*   `playwright`
-*   `puppeteer`
-*   `mcp`
-*   `bridge`
-*   *(All top-level directories in the apps and packages directories)*
-*   *(Consider adding other relevant top-level packages or areas here if needed)*
-
-**Examples:**
-
-*   `feat(mcp): add screenshot tool with element selection`
-*   `fix(android): correct adb connection issue on windows`
-*   `refactor(llm): simplify prompt generation logic`
-*   `chore(workflow): update commitlint configuration`
-*   `docs(bridge): clarify AgentOverChromeBridge usage`
-
-Your commit will be rejected by a pre-commit hook if it doesn't adhere to these rules.
+Commit messages are not linted by a local hook. Use concise messages that make
+the affected area and intent clear.
 
 ---
 

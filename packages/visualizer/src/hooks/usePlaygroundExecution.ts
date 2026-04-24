@@ -15,6 +15,7 @@ import type {
 } from '../types';
 
 import { BLANK_RESULT } from '../utils/constants';
+import { createRunRecord } from '../utils/playground-run-records';
 import { allScriptsFromDump } from '../utils/replay-scripts';
 
 /**
@@ -76,6 +77,7 @@ export interface UsePlaygroundExecutionOptions {
   currentRunningIdRef: React.MutableRefObject<number | null>;
   interruptedFlagRef: React.MutableRefObject<Record<number, boolean>>;
   deviceType?: string;
+  onRunRecord?: (record: ReturnType<typeof createRunRecord>) => void;
 }
 
 /**
@@ -95,6 +97,7 @@ export function usePlaygroundExecution(options: UsePlaygroundExecutionOptions) {
     currentRunningIdRef,
     interruptedFlagRef,
     deviceType,
+    onRunRecord,
   } = options;
   // Get execution options from environment config
   const {
@@ -146,6 +149,22 @@ export function usePlaygroundExecution(options: UsePlaygroundExecutionOptions) {
         loadingProgressText: '',
       };
       setInfoList((prev) => [...prev, systemItem]);
+      const resolvedDeepThink = deepThink === 'unset' ? undefined : deepThink;
+      const executionOptions = {
+        requestId: thisRunningId.toString(),
+        deepLocate,
+        ...(actionType === 'aiAct' && resolvedDeepThink !== undefined
+          ? { deepThink: resolvedDeepThink }
+          : {}),
+        screenshotIncluded,
+        domIncluded,
+        deviceOptions: {
+          imeStrategy,
+          autoDismissKeyboard,
+          keyboardDismissStrategy,
+          alwaysRefreshScreenInfo,
+        },
+      };
 
       try {
         currentRunningIdRef.current = thisRunningId;
@@ -218,22 +237,6 @@ export function usePlaygroundExecution(options: UsePlaygroundExecutionOptions) {
         }
         // Only pass deepThink when it's explicitly set (true/false), not when 'unset'
         // so that model-level reasoningEnabled from env config is respected
-        const resolvedDeepThink = deepThink === 'unset' ? undefined : deepThink;
-        const executionOptions = {
-          requestId: thisRunningId.toString(),
-          deepLocate,
-          ...(actionType === 'aiAct' && resolvedDeepThink !== undefined
-            ? { deepThink: resolvedDeepThink }
-            : {}),
-          screenshotIncluded,
-          domIncluded,
-          deviceOptions: {
-            imeStrategy,
-            autoDismissKeyboard,
-            keyboardDismissStrategy,
-            alwaysRefreshScreenInfo,
-          },
-        };
         result.result = await playgroundSDK.executeAction(
           actionType,
           value,
@@ -307,6 +310,14 @@ export function usePlaygroundExecution(options: UsePlaygroundExecutionOptions) {
       );
 
       // Add result to list
+      const runRecord = createRunRecord({
+        id: `run-${thisRunningId}`,
+        value,
+        executionOptions,
+        status: result.error ? 'failed' : 'passed',
+        result,
+      });
+
       const resultItem: InfoListItem = {
         id: `result-${thisRunningId}`,
         type: 'result',
@@ -319,9 +330,11 @@ export function usePlaygroundExecution(options: UsePlaygroundExecutionOptions) {
         loadingProgressText: '',
         verticalMode: verticalMode,
         actionType: actionType, // Save actionType for display logic
+        runRecord,
       };
 
       setInfoList((prev) => [...prev, resultItem]);
+      onRunRecord?.(runRecord);
 
       // Store result if storage is available
       if (storage?.saveResult) {
@@ -361,6 +374,7 @@ export function usePlaygroundExecution(options: UsePlaygroundExecutionOptions) {
       autoDismissKeyboard,
       keyboardDismissStrategy,
       alwaysRefreshScreenInfo,
+      onRunRecord,
     ],
   );
 
@@ -451,6 +465,20 @@ export function usePlaygroundExecution(options: UsePlaygroundExecutionOptions) {
             verticalMode,
             replayScriptsInfo: replayInfo,
             replayCounter: counter,
+            runRecord: createRunRecord({
+              id: `run-${thisRunningId}`,
+              value: {
+                type: 'stopped',
+              },
+              executionOptions: {},
+              status: 'stopped',
+              result: {
+                result: null,
+                dump: executionData.dump,
+                reportHTML: executionData.reportHTML,
+                error: null,
+              },
+            }),
           };
           setInfoList((prev) => [...prev, resultItem]);
         } else {

@@ -3,7 +3,16 @@ import type {
   PlaygroundSessionField,
   PlaygroundSessionSetup,
 } from '@midscene/playground';
-import { Alert, Form, Input, InputNumber, Radio, Select } from 'antd';
+import {
+  Alert,
+  Button,
+  Checkbox,
+  Form,
+  Input,
+  InputNumber,
+  Radio,
+  Select,
+} from 'antd';
 import type { FormInstance } from 'antd';
 import type { PlaygroundFormValues } from './controller/types';
 import DropdownChevron from './icons/dropdown-chevron.svg';
@@ -53,6 +62,18 @@ function renderSessionField(
     return (
       <InputNumber style={{ width: '100%' }} placeholder={field.placeholder} />
     );
+  }
+
+  if (field.type === 'password' || field.type === 'secret') {
+    return <Input.Password placeholder={field.placeholder} />;
+  }
+
+  if (field.type === 'boolean') {
+    return <Checkbox>{field.placeholder || field.label}</Checkbox>;
+  }
+
+  if (field.type === 'textarea') {
+    return <Input.TextArea placeholder={field.placeholder} rows={4} />;
   }
 
   if (field.type === 'select') {
@@ -125,6 +146,7 @@ export interface SessionSetupPanelProps {
   sessionLoading: boolean;
   sessionMutating: boolean;
   onCreateSession: () => void | Promise<void>;
+  onRefreshSetup?: () => void | Promise<void>;
 }
 
 const DEFAULT_TITLE = 'Create Agent';
@@ -138,6 +160,7 @@ export function SessionSetupPanel({
   sessionLoading,
   sessionMutating,
   onCreateSession,
+  onRefreshSetup,
 }: SessionSetupPanelProps) {
   const submitDisabled =
     sessionMutating ||
@@ -153,6 +176,18 @@ export function SessionSetupPanel({
         <MidsceneLogo aria-hidden="true" className="session-setup-logo" />
         <h1 className="session-setup-title">{title}</h1>
         <p className="session-setup-description">{description}</p>
+        {onRefreshSetup ? (
+          <Button
+            size="small"
+            onClick={() => {
+              void onRefreshSetup();
+            }}
+            loading={sessionLoading}
+            className="session-setup-refresh"
+          >
+            Refresh targets
+          </Button>
+        ) : null}
 
         {sessionViewState.setupState === 'blocked' &&
           sessionViewState.setupBlockingReason && (
@@ -201,6 +236,7 @@ export function SessionSetupPanel({
                     ]
                   : undefined
               }
+              valuePropName={field.type === 'boolean' ? 'checked' : 'value'}
             >
               {renderSessionField(field, sessionSetup)}
             </Form.Item>

@@ -36,15 +36,7 @@ should point here instead of duplicating rules.
 
 ## Commit And PR Rules
 
-- Commits must follow Conventional Commits with a required scope.
-- Scope values come from directory names under `apps/` and `packages/`, plus
-  shared scopes in `commitlint.config.js` such as `workflow`, `llm`,
-  `playwright`, `puppeteer`, and `bridge`.
-- Important mismatch: use `web-integration` as the commit scope for changes
-  under `packages/web-integration`, even though the published package name is
-  `@midscene/web`.
-- Important mismatch: use `site` as the commit scope for `apps/site`, even
-  though the Nx project name is `doc`.
+- Commit messages are not linted by a local hook.
 - In PR summaries, list the actual validation commands you ran.
 
 ## Docs And I18n

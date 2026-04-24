@@ -1,75 +1,37 @@
-**LambdaTest is now branded as TestMu AI.** The rebrand announcement was published on **April 21, 2026**, and positions the platform as an **AI-agentic quality engineering platform** rather than only a browser/device cloud. The core stack now centers on **KaneAI, HyperExecute, Test Manager, SmartUI, Test Insights, Accessibility Testing, Real Device Cloud, and Agent-to-Agent Testing**. ([TestMu AI][1])
-
 ## 1) Platform-level principal features
 
-At platform level, TestMu AI presents itself as a unified QA cloud with:
-
-* **AI testing agents**
+* **AI testing agent**
 * **automation cloud**
-* **real device cloud**
+* **real device multi suppot (3000+ browser/OS combinations**, **10,000+ real mobile devices)**
 * **AI-native test management**
 * **visual testing**
-* **accessibility testing**
-* **test orchestration**
-* **test intelligence / insights**
 
-The homepage and product pages also repeatedly claim support for **3000+ browser/OS combinations**, **10,000+ real mobile devices**, and **120+ integrations/framework connections**.
+## AI testing agent
 
-## 2) KaneAI — the AI-native testing agent
+* **Natural-language test authoring**: create and manage tests in plain English instead of writing code first.
+* **End-to-end flow testing** across multiple layers, not just UI.
+* **API + UI combined validation** so API checks can live inside the same flow strategy.
+* **Real-time network checks** on responses, status, and payloads.
+* **Pixel-perfect validation** for UI comparison / visual checking.
 
-This is the flagship AI layer. TestMu AI describes KaneAI as a **GenAI-native test agent** that helps teams **plan, author, and evolve end-to-end tests using natural language**. ([LambdaTest][4])
-
-### KaneAI principal features
-
-* **Natural-language test authoring**: create and manage tests in plain English instead of writing code first. ([LambdaTest][4])
-* **End-to-end flow testing** across multiple layers, not just UI. ([LambdaTest][4])
-* **Multi-input test generation** from text, Jira tickets, PRDs, PDFs, images, audio, video, and spreadsheets. ([LambdaTest][4])
-* **API + UI combined validation** so API checks can live inside the same flow strategy. ([LambdaTest][4])
-* **Real-time network checks** on responses, status, and payloads. ([LambdaTest][4])
-* **Pixel-perfect validation** for UI comparison / visual checking. ([LambdaTest][4])
-* **Database-ready tests** that can generate tests from real database queries. ([LambdaTest][4])
-* **Built-in accessibility** checks within the flow. ([LambdaTest][4])
-
-### KaneAI sub-features / workflow controls
+### Sub-features / workflow controls
 
 * **Human-in-the-loop approval**
 
   * manual interaction recording into reusable steps
   * plan approval before execution
   * custom environment selection
-  * step-level execution control: fail / continue / skip logic. ([LambdaTest][4])
-
-### Recent KaneAI additions mentioned in updates
-
-The September 2025 updates page says KaneAI can now **generate complete test plans and step-by-step test cases from high-level objectives**, and that credits are tracked for **AI-native/premium features**. ([LambdaTest][5])
-
-## 3) HyperExecute — AI-native test orchestration cloud
-
-HyperExecute is their execution/orchestration engine. TestMu AI positions it as an **AI-native end-to-end test orchestration cloud** and claims it is **up to 70% faster than traditional cloud grids**. Their docs say it replaces traditional hub-and-node grids with orchestration that reduces latency and optimizes resource use. ([TestMu AI][6])
+  * step-level execution control: fail / continue / ...
 
 ### HyperExecute principal features
 
-* **Intelligent test distribution**
-
-  * auto-split
-  * matrix strategy / hybrid strategy
-  * automatic reordering based on past failures. ([TestMu AI][7])
-* **Failure-focused execution**
-
-  * failure-history prioritization
-  * fail-fast aborts
-  * intelligent retries. ([TestMu AI][6])
-* **Broad framework/language support**
-
-  * Selenium, Playwright, Cypress, Appium, more
-  * Java, Python, Node.js, C#, PHP, Go, others. ([TestMu AI][6])
-* **Fresh on-demand VMs** with custom environment/dependency configuration. ([TestMu AI][6])
-* **Customizable runners** via pre- and post-scripts. ([TestMu AI][8])
-* **CLI-driven execution** for local and CI usage. ([TestMu AI][8])
-* **Automatic tunnel management** for private websites using dedicated NAT-backed access. ([TestMu AI][8])
-* **Dependency caching** to accelerate repeated runs. ([TestMu AI][8])
-* **Workflows / scheduled jobs** for automated job orchestration. ([TestMu AI][8])
-* **MCP Server** as a newer AI-native orchestration interface. ([TestMu AI][8])
+* **Fresh on-demand VMs** with custom environment/dependency configuration.
+* **Customizable runners** via pre- and post-scripts.
+* **CLI-driven execution** for local and CI usage.
+* **Automatic tunnel management** for private websites using dedicated NAT-backed access.
+* **Dependency caching** to accelerate repeated runs.
+* **Workflows / scheduled jobs** for automated job orchestration.
+* **MCP Server** as a newer AI-native orchestration interface.
 
 ### Recent HyperExecute additions called out by TestMu AI
 

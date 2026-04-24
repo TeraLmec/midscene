@@ -1,8 +1,9 @@
 import { LoadingOutlined } from '@ant-design/icons';
 import { noReplayAPIs } from '@midscene/playground';
-import { Spin } from 'antd';
+import { Button, Space, Spin, Tooltip } from 'antd';
 import type React from 'react';
 import type { PlaygroundResult as PlaygroundResultType } from '../../types';
+import type { PlaygroundRunRecord } from '../../types';
 import type { ServiceModeType } from '../../types';
 import type { ReplayScriptsInfo } from '../../utils/replay-scripts';
 import { emptyResultTip, serverLaunchTip } from '../misc';
@@ -24,6 +25,12 @@ interface PlaygroundResultProps {
   autoZoom?: boolean;
   actionType?: string; // The action type that was executed
   canDownloadReport?: boolean;
+  runRecord?: PlaygroundRunRecord;
+  onRerun?: (record: PlaygroundRunRecord) => void;
+  onEditRerun?: (record: PlaygroundRunRecord) => void;
+  onSaveSequence?: (record: PlaygroundRunRecord) => void;
+  onExportYaml?: (record: PlaygroundRunRecord) => void;
+  onDownloadDump?: (record: PlaygroundRunRecord) => void;
 }
 
 export const PlaygroundResultView: React.FC<PlaygroundResultProps> = ({
@@ -40,6 +47,12 @@ export const PlaygroundResultView: React.FC<PlaygroundResultProps> = ({
   autoZoom,
   actionType,
   canDownloadReport,
+  runRecord,
+  onRerun,
+  onEditRerun,
+  onSaveSequence,
+  onExportYaml,
+  onDownloadDump,
 }) => {
   let resultWrapperClassName = 'result-wrapper';
   if (verticalMode) {
@@ -238,6 +251,27 @@ export const PlaygroundResultView: React.FC<PlaygroundResultProps> = ({
         justifyContent: 'center',
       }}
     >
+      {runRecord ? (
+        <Space className="result-action-bar" size={6} wrap>
+          <Tooltip title="Run this action again">
+            <Button size="small" onClick={() => onRerun?.(runRecord)}>
+              Rerun
+            </Button>
+          </Tooltip>
+          <Button size="small" onClick={() => onEditRerun?.(runRecord)}>
+            Edit and rerun
+          </Button>
+          <Button size="small" onClick={() => onSaveSequence?.(runRecord)}>
+            Save to sequence
+          </Button>
+          <Button size="small" onClick={() => onExportYaml?.(runRecord)}>
+            Export YAML
+          </Button>
+          <Button size="small" onClick={() => onDownloadDump?.(runRecord)}>
+            Download dump
+          </Button>
+        </Space>
+      ) : null}
       {resultDataToShow}
     </div>
   );

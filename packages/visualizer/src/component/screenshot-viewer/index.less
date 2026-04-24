@@ -100,12 +100,14 @@
       .screenshot-controls {
         display: flex;
         align-items: center;
-        gap: 10px;
-        height: 18px;
+        gap: 8px;
+        min-height: 24px;
         border-radius: 4px;
         opacity: 1;
         padding: 4px 8px;
         box-sizing: border-box;
+        flex-wrap: wrap;
+        justify-content: flex-end;
 
         .last-update-time {
           font-size: 12px;
@@ -122,14 +124,22 @@
           font-size: 12px;
         }
 
+        .interactive-toggle {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          color: #666;
+          font-size: 12px;
+          white-space: nowrap;
+        }
+
         .ant-btn {
           border: none;
           box-shadow: none;
           background: transparent;
-          padding: 0;
-          width: 16px;
-          height: 16px;
-          min-width: 16px;
+          padding: 0 4px;
+          height: 20px;
+          min-width: 20px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -150,6 +160,13 @@
       }
     }
 
+    .screenshot-typebar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 5px 8px;
+    }
+
     .screenshot-content {
       flex: 1;
       display: flex;
@@ -163,6 +180,11 @@
         height: auto;
         object-fit: contain;
         border-radius: 12px;
+
+        &.actual-size {
+          max-width: none;
+          max-height: none;
+        }
       }
 
       .screenshot-placeholder {
@@ -217,6 +239,10 @@
         }
 
         .screenshot-controls {
+          .interactive-toggle {
+            color: #f8fafd;
+          }
+
           .last-update-time {
             color: #f8fafd;
           }

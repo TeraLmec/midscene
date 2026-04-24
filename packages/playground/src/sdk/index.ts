@@ -16,6 +16,11 @@ import type {
   FormValue,
   PlaygroundAgent,
   PlaygroundConfig,
+  PreviewClickInput,
+  PreviewKeyInput,
+  PreviewNavigationInput,
+  PreviewScrollInput,
+  PreviewTypeInput,
   ValidationResult,
 } from '../types';
 
@@ -231,6 +236,41 @@ export class PlaygroundSDK {
       return this.adapter.getScreenshot();
     }
     return null; // For local execution, not supported yet
+  }
+
+  async sendPreviewClick(payload: PreviewClickInput): Promise<void> {
+    if (this.adapter instanceof RemoteExecutionAdapter) {
+      return this.adapter.sendPreviewClick(payload);
+    }
+    throw new Error('Preview input is only supported in remote execution mode');
+  }
+
+  async sendPreviewType(payload: PreviewTypeInput): Promise<void> {
+    if (this.adapter instanceof RemoteExecutionAdapter) {
+      return this.adapter.sendPreviewType(payload);
+    }
+    throw new Error('Preview input is only supported in remote execution mode');
+  }
+
+  async sendPreviewKey(payload: PreviewKeyInput): Promise<void> {
+    if (this.adapter instanceof RemoteExecutionAdapter) {
+      return this.adapter.sendPreviewKey(payload);
+    }
+    throw new Error('Preview input is only supported in remote execution mode');
+  }
+
+  async sendPreviewScroll(payload: PreviewScrollInput): Promise<void> {
+    if (this.adapter instanceof RemoteExecutionAdapter) {
+      return this.adapter.sendPreviewScroll(payload);
+    }
+    throw new Error('Preview input is only supported in remote execution mode');
+  }
+
+  async sendPreviewNavigation(payload: PreviewNavigationInput): Promise<void> {
+    if (this.adapter instanceof RemoteExecutionAdapter) {
+      return this.adapter.sendPreviewNavigation(payload);
+    }
+    throw new Error('Preview input is only supported in remote execution mode');
   }
 
   // Get interface information (type and description)

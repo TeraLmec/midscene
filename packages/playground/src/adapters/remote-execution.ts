@@ -10,7 +10,16 @@ import type {
   PlaygroundSessionTarget,
 } from '../platform';
 import type { PlaygroundRuntimeInfo } from '../runtime-metadata';
-import type { ExecutionOptions, FormValue, ValidationResult } from '../types';
+import type {
+  ExecutionOptions,
+  FormValue,
+  PreviewClickInput,
+  PreviewKeyInput,
+  PreviewNavigationInput,
+  PreviewScrollInput,
+  PreviewTypeInput,
+  ValidationResult,
+} from '../types';
 import { BasePlaygroundAdapter } from './base';
 
 export class RemoteExecutionAdapter extends BasePlaygroundAdapter {
@@ -457,6 +466,51 @@ export class RemoteExecutionAdapter extends BasePlaygroundAdapter {
       console.error('Failed to get screenshot:', error);
       return null;
     }
+  }
+
+  private async sendPreviewInput<TPayload extends object>(
+    path: string,
+    payload: TPayload,
+  ): Promise<void> {
+    if (!this.serverUrl) {
+      throw new Error('Preview input requires a server URL');
+    }
+
+    const response = await fetch(`${this.serverUrl}${path}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      throw new Error(
+        body?.error ||
+          `Preview input request failed (${response.status}): ${response.statusText}`,
+      );
+    }
+  }
+
+  async sendPreviewClick(payload: PreviewClickInput): Promise<void> {
+    return this.sendPreviewInput('/input/click', payload);
+  }
+
+  async sendPreviewType(payload: PreviewTypeInput): Promise<void> {
+    return this.sendPreviewInput('/input/type', payload);
+  }
+
+  async sendPreviewKey(payload: PreviewKeyInput): Promise<void> {
+    return this.sendPreviewInput('/input/key', payload);
+  }
+
+  async sendPreviewScroll(payload: PreviewScrollInput): Promise<void> {
+    return this.sendPreviewInput('/input/scroll', payload);
+  }
+
+  async sendPreviewNavigation(payload: PreviewNavigationInput): Promise<void> {
+    return this.sendPreviewInput('/input/navigation', payload);
   }
 
   // Get interface information from server

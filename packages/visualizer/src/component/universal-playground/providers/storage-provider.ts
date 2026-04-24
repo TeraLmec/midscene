@@ -1,4 +1,8 @@
-import type { InfoListItem, StorageProvider } from '../../../types';
+import type {
+  InfoListItem,
+  PlaygroundRunRecord,
+  StorageProvider,
+} from '../../../types';
 import {
   MemoryStorageProvider as IndexedDBMemoryStorageProvider,
   NoOpStorageProvider as IndexedDBNoOpStorageProvider,
@@ -11,11 +15,13 @@ import {
 export class LocalStorageProvider implements StorageProvider {
   private readonly messagesKey: string;
   private readonly resultsKey: string;
+  private readonly runRecordsKey: string;
   private readonly maxStorageItems = 50; // Limit stored items to prevent quota issues
 
   constructor(namespace = 'playground') {
     this.messagesKey = `${namespace}-messages`;
     this.resultsKey = `${namespace}-results`;
+    this.runRecordsKey = `${namespace}-run-records`;
   }
 
   /**
@@ -125,6 +131,7 @@ export class LocalStorageProvider implements StorageProvider {
   async clearMessages(): Promise<void> {
     try {
       localStorage.removeItem(this.messagesKey);
+      localStorage.removeItem(this.runRecordsKey);
 
       // Also clear all result data
       const keys = Object.keys(localStorage);
@@ -165,6 +172,32 @@ export class LocalStorageProvider implements StorageProvider {
       } else {
         console.error('Failed to save result to localStorage:', error);
       }
+    }
+  }
+
+  async saveRunRecords(records: PlaygroundRunRecord[]): Promise<void> {
+    try {
+      localStorage.setItem(this.runRecordsKey, JSON.stringify(records));
+    } catch (error) {
+      console.error('Failed to save run records to localStorage:', error);
+    }
+  }
+
+  async loadRunRecords(): Promise<PlaygroundRunRecord[]> {
+    try {
+      const stored = localStorage.getItem(this.runRecordsKey);
+      return stored ? (JSON.parse(stored) as PlaygroundRunRecord[]) : [];
+    } catch (error) {
+      console.error('Failed to load run records from localStorage:', error);
+      return [];
+    }
+  }
+
+  async clearRunRecords(): Promise<void> {
+    try {
+      localStorage.removeItem(this.runRecordsKey);
+    } catch (error) {
+      console.error('Failed to clear run records from localStorage:', error);
     }
   }
 
@@ -226,6 +259,7 @@ export class LocalStorageProvider implements StorageProvider {
 export class MemoryStorageProvider implements StorageProvider {
   private messages: InfoListItem[] = [];
   private results = new Map<string, InfoListItem>();
+  private runRecords: PlaygroundRunRecord[] = [];
 
   async saveMessages(messages: InfoListItem[]): Promise<void> {
     this.messages = [...messages];
@@ -238,10 +272,23 @@ export class MemoryStorageProvider implements StorageProvider {
   async clearMessages(): Promise<void> {
     this.messages = [];
     this.results.clear();
+    this.runRecords = [];
   }
 
   async saveResult(id: string, result: InfoListItem): Promise<void> {
     this.results.set(id, result);
+  }
+
+  async saveRunRecords(records: PlaygroundRunRecord[]): Promise<void> {
+    this.runRecords = [...records];
+  }
+
+  async loadRunRecords(): Promise<PlaygroundRunRecord[]> {
+    return [...this.runRecords];
+  }
+
+  async clearRunRecords(): Promise<void> {
+    this.runRecords = [];
   }
 }
 
@@ -262,6 +309,18 @@ export class NoOpStorageProvider implements StorageProvider {
   }
 
   async saveResult(_id: string, _result: InfoListItem): Promise<void> {
+    // No-op
+  }
+
+  async saveRunRecords(_records: PlaygroundRunRecord[]): Promise<void> {
+    // No-op
+  }
+
+  async loadRunRecords(): Promise<PlaygroundRunRecord[]> {
+    return [];
+  }
+
+  async clearRunRecords(): Promise<void> {
     // No-op
   }
 }

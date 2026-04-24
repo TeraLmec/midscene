@@ -64,6 +64,9 @@ export function PreviewRenderer({
     previewConnection.type === 'scrcpy' &&
     !WebCodecsVideoDecoder.isSupported &&
     isNonLocalhostHttp();
+  const interactiveAvailable =
+    runtimeInfo?.interface?.type === 'puppeteer' &&
+    typeof playgroundSDK.sendPreviewClick === 'function';
 
   return (
     <div
@@ -160,6 +163,16 @@ export function PreviewRenderer({
           serverOnline={serverOnline}
           isUserOperating={isUserOperating}
           mjpegUrl={previewConnection.mjpegUrl}
+          interactiveAvailable={interactiveAvailable}
+          onPreviewClick={(payload) => playgroundSDK.sendPreviewClick(payload)}
+          onPreviewType={(payload) => playgroundSDK.sendPreviewType(payload)}
+          onPreviewKey={(payload) => playgroundSDK.sendPreviewKey(payload)}
+          onPreviewScroll={(payload) =>
+            playgroundSDK.sendPreviewScroll(payload)
+          }
+          onPreviewNavigation={(payload) =>
+            playgroundSDK.sendPreviewNavigation(payload)
+          }
         />
       )}
     </div>
