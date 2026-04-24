@@ -19,7 +19,6 @@
     "lint": "npx biome check . --diagnostic-level=info --no-errors-on-unmatched --fix",
     "format:ci": "pretty-quick --since HEAD~1",
     "format": "pretty-quick --staged",
-    "commit": "cz",
     "check-spell": "npx cspell",
     "clean": "rm -rf .nx/cache packages/*/dist packages/*/node_modules/.cache apps/*/dist apps/*/node_modules/.cache packages/playground/static packages/ios/static"
   },
@@ -50,7 +49,6 @@
     "@jsdevtools/version-bump-prompt": "6.1.0",
     "chalk": "4.1.2",
     "check-dependency-version-consistency": "^4.1.1",
-    "commitizen": "4.2.5",
     "cspell-ban-words": "^0.0.3",
     "dayjs": "^1.11.11",
     "minimist": "1.2.5",
